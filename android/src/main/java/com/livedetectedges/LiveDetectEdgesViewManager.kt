@@ -35,6 +35,16 @@ class LiveDetectEdgesViewManager : SimpleViewManager<LiveDetectEdgesView>(),
     view?.setBackgroundColor(color ?: Color.TRANSPARENT)
   }
 
+  @ReactProp(name = "overlayColor")
+  override fun setOverlayColor(view: LiveDetectEdgesView?, color: Int?) {
+    view?.setOverlayColor(color ?: Color.GREEN)
+  }
+
+  @ReactProp(name = "overlayStrokeWidth")
+  override fun setOverlayStrokeWidth(view: LiveDetectEdgesView, value: Float) {
+    view.setOverlayStrokeWidth(value)
+  }
+
   companion object {
     const val NAME = "LiveDetectEdgesView"
   }
