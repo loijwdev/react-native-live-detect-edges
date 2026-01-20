@@ -21,6 +21,42 @@ public final class ScannerViewController: UIViewController {
 
     /// The view that draws the detected rectangles.
     private let quadView = QuadrilateralView()
+    
+    // MARK: - Customization
+    
+    private var customFillColor: UIColor?
+
+    public var overlayColor: UIColor? {
+        didSet {
+            quadView.strokeColor = overlayColor?.cgColor
+            if customFillColor == nil {
+                updateFillColorFromStroke()
+            }
+        }
+    }
+    
+    public var overlayFillColor: UIColor? {
+        didSet {
+            customFillColor = overlayFillColor
+            if let color = overlayFillColor {
+                quadView.fillColor = color.cgColor
+            } else {
+                updateFillColorFromStroke()
+            }
+        }
+    }
+    
+    private func updateFillColorFromStroke() {
+        guard let stroke = overlayColor else { return }
+        // Match Android behavior: alpha 60/255 ~= 0.25
+        quadView.fillColor = stroke.withAlphaComponent(0.25).cgColor
+    }
+    
+    public var overlayStrokeWidth: CGFloat = 1.0 {
+        didSet {
+            quadView.strokeWidth = overlayStrokeWidth
+        }
+    }
 
     /// Whether flash is enabled
     private var flashEnabled = false
@@ -82,6 +118,8 @@ public final class ScannerViewController: UIViewController {
 
         originalBarStyle = navigationController?.navigationBar.barStyle
 
+        CaptureSession.current.isAutoScanEnabled = false
+        
         NotificationCenter.default.addObserver(self, selector: #selector(subjectAreaDidChange), name: Notification.Name.AVCaptureDeviceSubjectAreaDidChange, object: nil)
     }
 
@@ -124,27 +162,27 @@ public final class ScannerViewController: UIViewController {
         quadView.translatesAutoresizingMaskIntoConstraints = false
         quadView.editable = false
         view.addSubview(quadView)
-        view.addSubview(cancelButton)
-        view.addSubview(shutterButton)
-        view.addSubview(activityIndicator)
+        // view.addSubview(cancelButton)
+        // view.addSubview(shutterButton)
+        // view.addSubview(activityIndicator)
     }
 
     private func setupNavigationBar() {
-        navigationItem.setLeftBarButton(flashButton, animated: false)
-        navigationItem.setRightBarButton(autoScanButton, animated: false)
+        // navigationItem.setLeftBarButton(flashButton, animated: false)
+        // navigationItem.setRightBarButton(autoScanButton, animated: false)
 
-        if UIImagePickerController.isFlashAvailable(for: .rear) == false {
-            let flashOffImage = UIImage(systemName: "bolt.slash.fill", named: "flashUnavailable", in: Bundle(for: ScannerViewController.self), compatibleWith: nil)
-            flashButton.image = flashOffImage
-            flashButton.tintColor = UIColor.lightGray
-        }
+        // if UIImagePickerController.isFlashAvailable(for: .rear) == false {
+        //     let flashOffImage = UIImage(systemName: "bolt.slash.fill", named: "flashUnavailable", in: Bundle(for: ScannerViewController.self), compatibleWith: nil)
+        //     flashButton.image = flashOffImage
+        //     flashButton.tintColor = UIColor.lightGray
+        // }
     }
 
     private func setupConstraints() {
         var quadViewConstraints = [NSLayoutConstraint]()
-        var cancelButtonConstraints = [NSLayoutConstraint]()
-        var shutterButtonConstraints = [NSLayoutConstraint]()
-        var activityIndicatorConstraints = [NSLayoutConstraint]()
+        // var cancelButtonConstraints = [NSLayoutConstraint]()
+        // var shutterButtonConstraints = [NSLayoutConstraint]()
+        // var activityIndicatorConstraints = [NSLayoutConstraint]()
 
         quadViewConstraints = [
             quadView.topAnchor.constraint(equalTo: view.topAnchor),
@@ -153,36 +191,36 @@ public final class ScannerViewController: UIViewController {
             quadView.leadingAnchor.constraint(equalTo: view.leadingAnchor)
         ]
 
-        shutterButtonConstraints = [
-            shutterButton.centerXAnchor.constraint(equalTo: view.centerXAnchor),
-            shutterButton.widthAnchor.constraint(equalToConstant: 65.0),
-            shutterButton.heightAnchor.constraint(equalToConstant: 65.0)
-        ]
+        // shutterButtonConstraints = [
+        //     shutterButton.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+        //     shutterButton.widthAnchor.constraint(equalToConstant: 65.0),
+        //     shutterButton.heightAnchor.constraint(equalToConstant: 65.0)
+        // ]
 
-        activityIndicatorConstraints = [
-            activityIndicator.centerXAnchor.constraint(equalTo: view.centerXAnchor),
-            activityIndicator.centerYAnchor.constraint(equalTo: view.centerYAnchor)
-        ]
+        // activityIndicatorConstraints = [
+        //     activityIndicator.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+        //     activityIndicator.centerYAnchor.constraint(equalTo: view.centerYAnchor)
+        // ]
 
-        if #available(iOS 11.0, *) {
-            cancelButtonConstraints = [
-                cancelButton.leftAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leftAnchor, constant: 24.0),
-                view.safeAreaLayoutGuide.bottomAnchor.constraint(equalTo: cancelButton.bottomAnchor, constant: (65.0 / 2) - 10.0)
-            ]
+        // if #available(iOS 11.0, *) {
+        //     cancelButtonConstraints = [
+        //         cancelButton.leftAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leftAnchor, constant: 24.0),
+        //         view.safeAreaLayoutGuide.bottomAnchor.constraint(equalTo: cancelButton.bottomAnchor, constant: (65.0 / 2) - 10.0)
+        //     ]
 
-            let shutterButtonBottomConstraint = view.safeAreaLayoutGuide.bottomAnchor.constraint(equalTo: shutterButton.bottomAnchor, constant: 8.0)
-            shutterButtonConstraints.append(shutterButtonBottomConstraint)
-        } else {
-            cancelButtonConstraints = [
-                cancelButton.leftAnchor.constraint(equalTo: view.leftAnchor, constant: 24.0),
-                view.bottomAnchor.constraint(equalTo: cancelButton.bottomAnchor, constant: (65.0 / 2) - 10.0)
-            ]
+        //     let shutterButtonBottomConstraint = view.safeAreaLayoutGuide.bottomAnchor.constraint(equalTo: shutterButton.bottomAnchor, constant: 8.0)
+        //     shutterButtonConstraints.append(shutterButtonBottomConstraint)
+        // } else {
+        //     cancelButtonConstraints = [
+        //         cancelButton.leftAnchor.constraint(equalTo: view.leftAnchor, constant: 24.0),
+        //         view.bottomAnchor.constraint(equalTo: cancelButton.bottomAnchor, constant: (65.0 / 2) - 10.0)
+        //     ]
 
-            let shutterButtonBottomConstraint = view.bottomAnchor.constraint(equalTo: shutterButton.bottomAnchor, constant: 8.0)
-            shutterButtonConstraints.append(shutterButtonBottomConstraint)
-        }
+        //     let shutterButtonBottomConstraint = view.bottomAnchor.constraint(equalTo: shutterButton.bottomAnchor, constant: 8.0)
+        //     shutterButtonConstraints.append(shutterButtonBottomConstraint)
+        // }
 
-        NSLayoutConstraint.activate(quadViewConstraints + cancelButtonConstraints + shutterButtonConstraints + activityIndicatorConstraints)
+        NSLayoutConstraint.activate(quadViewConstraints) // + cancelButtonConstraints + shutterButtonConstraints + activityIndicatorConstraints)
     }
 
     // MARK: - Tap to Focus
@@ -200,29 +238,29 @@ public final class ScannerViewController: UIViewController {
         }
 
         /// Remove the focus rectangle if one exists
-        CaptureSession.current.removeFocusRectangleIfNeeded(focusRectangle, animated: true)
+        // CaptureSession.current.removeFocusRectangleIfNeeded(focusRectangle, animated: true)
     }
 
     override public func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
         super.touchesBegan(touches, with: event)
 
-        guard  let touch = touches.first else { return }
-        let touchPoint = touch.location(in: view)
-        let convertedTouchPoint: CGPoint = videoPreviewLayer.captureDevicePointConverted(fromLayerPoint: touchPoint)
-
-        CaptureSession.current.removeFocusRectangleIfNeeded(focusRectangle, animated: false)
-
-        focusRectangle = FocusRectangleView(touchPoint: touchPoint)
-        view.addSubview(focusRectangle)
-
-        do {
-            try CaptureSession.current.setFocusPointToTapPoint(convertedTouchPoint)
-        } catch {
-            let error = ImageScannerControllerError.inputDevice
-            guard let captureSessionManager else { return }
-            captureSessionManager.delegate?.captureSessionManager(captureSessionManager, didFailWithError: error)
-            return
-        }
+        // guard  let touch = touches.first else { return }
+        // let touchPoint = touch.location(in: view)
+        // let convertedTouchPoint: CGPoint = videoPreviewLayer.captureDevicePointConverted(fromLayerPoint: touchPoint)
+        //
+        // CaptureSession.current.removeFocusRectangleIfNeeded(focusRectangle, animated: false)
+        //
+        // focusRectangle = FocusRectangleView(touchPoint: touchPoint)
+        // view.addSubview(focusRectangle)
+        //
+        // do {
+        //     try CaptureSession.current.setFocusPointToTapPoint(convertedTouchPoint)
+        // } catch {
+        //     let error = ImageScannerControllerError.inputDevice
+        //     guard let captureSessionManager else { return }
+        //     captureSessionManager.delegate?.captureSessionManager(captureSessionManager, didFailWithError: error)
+        //     return
+        // }
     }
 
     // MARK: - Actions

@@ -65,6 +65,20 @@ final class QuadrilateralView: UIView {
             bottomLeftCornerView.strokeColor = strokeColor
         }
     }
+    
+    /// Set fill color of image rect.
+    public var fillColor: CGColor? {
+        didSet {
+            quadLayer.fillColor = fillColor
+        }
+    }
+    
+    /// Set stroke width of image rect.
+    public var strokeWidth: CGFloat = 1.0 {
+        didSet {
+            quadLayer.lineWidth = strokeWidth
+        }
+    }
 
     private var isHighlighted = false {
         didSet (oldValue) {
