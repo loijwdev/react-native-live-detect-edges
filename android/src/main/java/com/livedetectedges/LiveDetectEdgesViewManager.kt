@@ -8,6 +8,7 @@ import com.facebook.react.uimanager.ViewManagerDelegate
 import com.facebook.react.uimanager.annotations.ReactProp
 import com.facebook.react.viewmanagers.LiveDetectEdgesViewManagerInterface
 import com.facebook.react.viewmanagers.LiveDetectEdgesViewManagerDelegate
+import com.facebook.react.uimanager.PixelUtil
 
 @ReactModule(name = LiveDetectEdgesViewManager.NAME)
 class LiveDetectEdgesViewManager : SimpleViewManager<LiveDetectEdgesView>(),
@@ -42,7 +43,7 @@ class LiveDetectEdgesViewManager : SimpleViewManager<LiveDetectEdgesView>(),
 
   @ReactProp(name = "overlayStrokeWidth")
   override fun setOverlayStrokeWidth(view: LiveDetectEdgesView, value: Float) {
-    view.setOverlayStrokeWidth(value)
+    view.setOverlayStrokeWidth(PixelUtil.toPixelFromDIP(value))
   }
 
   companion object {
