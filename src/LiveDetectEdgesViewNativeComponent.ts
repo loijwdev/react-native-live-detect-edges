@@ -6,8 +6,8 @@ import {
 } from 'react-native';
 
 interface NativeProps extends ViewProps {
-  color?: ColorValue;
   overlayColor?: ColorValue;
+  overlayFillColor?: ColorValue;
   overlayStrokeWidth?: CodegenTypes.Float;
 }
 

@@ -6,11 +6,13 @@ import {
   PermissionsAndroid,
   Platform,
   ActivityIndicator,
+  Button,
 } from 'react-native';
 import { LiveDetectEdgesView } from 'react-native-live-detect-edges';
 
 export default function App() {
   const [hasPermission, setHasPermission] = useState(false);
+  const [openCamera, setOpenCamera] = useState(false);
 
   useEffect(() => {
     const checkPermission = async () => {
@@ -34,6 +36,14 @@ export default function App() {
     checkPermission();
   }, []);
 
+  const handleStartCamera = () => {
+    setOpenCamera(true);
+  };
+
+  const handleStopCamera = () => {
+    setOpenCamera(false);
+  };
+
   if (!hasPermission) {
     return (
       <View style={styles.container}>
@@ -45,36 +55,23 @@ export default function App() {
 
   return (
     <View style={styles.container}>
-      {/* <View style={styles.controls}>
-        <TouchableOpacity
-          style={[
-            styles.button,
-            isCameraRunning ? styles.buttonDisabled : styles.buttonStart,
-          ]}
-          onPress={handleStartCamera}
-          disabled={isCameraRunning}
-        >
-          <Text style={styles.buttonText}>Start Camera</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[
-            styles.button,
-            !isCameraRunning ? styles.buttonDisabled : styles.buttonStop,
-          ]}
-          onPress={handleStopCamera}
-          disabled={!isCameraRunning}
-        >
-          <Text style={styles.buttonText}>Stop Camera</Text>
-        </TouchableOpacity>
-      </View> */}
-      <LiveDetectEdgesView
-        style={styles.scanner}
-        overlayColor="red"
-        overlayStrokeWidth={8}
+      <Button
+        title={openCamera ? 'Stop Camera' : 'Start Camera'}
+        onPress={openCamera ? handleStopCamera : handleStartCamera}
       />
-      <View style={styles.overlay}>
-        <Text style={styles.text}>Align document within frame</Text>
-      </View>
+
+      {openCamera && (
+        <>
+          <LiveDetectEdgesView
+            overlayColor="red"
+            overlayStrokeWidth={8}
+            style={styles.scanner}
+          />
+          <View style={styles.overlay}>
+            <Text style={styles.text}>Align document within frame</Text>
+          </View>
+        </>
+      )}
     </View>
   );
 }

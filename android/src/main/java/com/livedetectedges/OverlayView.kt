@@ -33,6 +33,8 @@ class OverlayView @JvmOverloads constructor(
     isAntiAlias = true
   }
 
+  private var customFillColor: Int? = null // Custom fill color set from RN, null means auto-generate from stroke color
+
   // Reuse objects to avoid memory allocations during animation
   private val currentPoints = List(4) { PointF() }
   private var targetPoints: List<PointF>? = null
@@ -48,7 +50,6 @@ class OverlayView @JvmOverloads constructor(
   private val interpolationSpeed = 15.0f
 
   private var missedFrames = 0
-  private val MAX_MISSED_FRAMES = 8 // Slightly more tolerant to avoid flickering
 
   fun updatePoints(newPoints: List<PointF>?) {
     if (newPoints != null && newPoints.size == 4) {
@@ -65,13 +66,10 @@ class OverlayView @JvmOverloads constructor(
       }
       startAnimation()
     } else {
-      missedFrames++
-      if (missedFrames >= MAX_MISSED_FRAMES) {
-        targetPoints = null
-        hasFirstPoints = false
-        stopAnimation()
-        invalidate()
-      }
+      targetPoints = null
+      hasFirstPoints = false
+      stopAnimation()
+      invalidate()
     }
   }
 
@@ -130,8 +128,31 @@ class OverlayView @JvmOverloads constructor(
 
   fun setOverlayColor(color: Int) {
     strokePaint.color = color
-    fillPaint.color = Color.argb(60, Color.red(color), Color.green(color), Color.blue(color))
+    // Auto-update fill color if no custom fill color is set
+    if (customFillColor == null) {
+      updateFillColorFromStroke()
+    }
     invalidate()
+  }
+
+  fun setOverlayFillColor(color: Int?) {
+    customFillColor = color
+    if (color != null) {
+      fillPaint.color = color
+    } else {
+      // If null, auto-generate from stroke color
+      updateFillColorFromStroke()
+    }
+    invalidate()
+  }
+
+  private fun updateFillColorFromStroke() {
+    val strokeColor = strokePaint.color
+    fillPaint.color = Color.argb(60, Color.red(strokeColor), Color.green(strokeColor), Color.blue(strokeColor))
+  }
+
+  fun getCurrentPoints(): List<PointF> {
+    return if (hasFirstPoints) currentPoints.toList() else emptyList()
   }
 
   fun setOverlayStrokeWidth(width: Float) {
@@ -152,12 +173,6 @@ class OverlayView @JvmOverloads constructor(
 
     canvas.drawPath(path, fillPaint)
     canvas.drawPath(path, strokePaint)
-
-    // Draw circles at corners for a polished look
-    val radius = strokePaint.strokeWidth * 1.2f
-    for (point in currentPoints) {
-      canvas.drawCircle(point.x, point.y, radius, strokePaint)
-    }
   }
 
   override fun onDetachedFromWindow() {

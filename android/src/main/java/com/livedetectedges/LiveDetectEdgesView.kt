@@ -207,13 +207,7 @@ class LiveDetectEdgesView(context: Context) : FrameLayout(context), LifecycleEve
     }
 
     fun setOverlayColor(color: Int) = overlayView.setOverlayColor(color)
+    fun setOverlayFillColor(color: Int?) = overlayView.setOverlayFillColor(color)
     fun setOverlayStrokeWidth(width: Float) = overlayView.setOverlayStrokeWidth(width)
 
-    fun startCameraManually() {
-        startCamera()
-    }
-
-    fun stopCameraManually() {
-        stopCamera()
-    }
 }
