@@ -7,6 +7,7 @@ import {
   Platform,
   ActivityIndicator,
   Button,
+  SafeAreaView,
 } from 'react-native';
 import { LiveDetectEdgesView } from 'react-native-live-detect-edges';
 
@@ -54,7 +55,7 @@ export default function App() {
   }
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <Button
         title={openCamera ? 'Stop Camera' : 'Start Camera'}
         onPress={openCamera ? handleStopCamera : handleStartCamera}
@@ -64,7 +65,7 @@ export default function App() {
         <>
           <LiveDetectEdgesView
             overlayColor="red"
-            overlayStrokeWidth={8}
+            overlayStrokeWidth={4}
             style={styles.scanner}
           />
           <View style={styles.overlay}>
@@ -72,7 +73,7 @@ export default function App() {
           </View>
         </>
       )}
-    </View>
+    </SafeAreaView>
   );
 }
 
