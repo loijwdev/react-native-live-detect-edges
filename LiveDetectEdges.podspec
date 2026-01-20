@@ -13,7 +13,7 @@ Pod::Spec.new do |s|
   s.platforms    = { :ios => min_ios_version_supported }
   s.source       = { :git => "https://github.com/loijwdev/react-native-live-detect-edges.git", :tag => "#{s.version}" }
 
-  s.source_files = "ios/**/*.{h,m,mm,swift,cpp}"
+  s.source_files = "ios/**/*.{h,m,mm,swift,cpp}", "ios/Vendor/WeScan/**/*.{h,m,mm,swift}"
   s.private_header_files = "ios/**/*.h"
 
   install_modules_dependencies(s)
