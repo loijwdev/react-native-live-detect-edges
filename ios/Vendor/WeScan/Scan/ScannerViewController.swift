@@ -35,6 +35,9 @@ public final class ScannerViewController: UIViewController {
         }
     }
     
+    /// callback for capture image
+    public var onCapture: ((UIImage, Quadrilateral?) -> Void)?
+    
     public var overlayFillColor: UIColor? {
         didSet {
             customFillColor = overlayFillColor
@@ -265,10 +268,14 @@ public final class ScannerViewController: UIViewController {
 
     // MARK: - Actions
 
-    @objc private func captureImage(_ sender: UIButton) {
+    @objc private func captureImage(_ sender: UIControl) {
         (navigationController as? ImageScannerController)?.flashToBlack()
         shutterButton.isUserInteractionEnabled = false
         captureSessionManager?.capturePhoto()
+    }
+    
+    public func capture() {
+        captureImage(shutterButton)
     }
 
     @objc private func toggleAutoScan() {
@@ -328,9 +335,13 @@ extension ScannerViewController: RectangleDetectionDelegateProtocol {
 
     func captureSessionManager(_ captureSessionManager: CaptureSessionManager, didCapturePicture picture: UIImage, withQuad quad: Quadrilateral?) {
         activityIndicator.stopAnimating()
-
-        let editVC = EditScanViewController(image: picture, quad: quad)
-        navigationController?.pushViewController(editVC, animated: false)
+        
+        if let onCapture = onCapture {
+            onCapture(picture, quad)
+        } else {
+            let editVC = EditScanViewController(image: picture, quad: quad)
+            navigationController?.pushViewController(editVC, animated: false)
+        }
 
         shutterButton.isUserInteractionEnabled = true
     }

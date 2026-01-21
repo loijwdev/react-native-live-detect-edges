@@ -7,6 +7,12 @@
 #import <react/renderer/components/LiveDetectEdgesViewSpec/RCTComponentViewHelpers.h>
 
 #import "RCTFabricComponentsPlugins.h"
+#import <React/RCTViewComponentView.h> // Ensure this is imported if not already via header
+
+// Protocol definition (usually in generated header, but declaring here just in
+// case helpful or to satisfy IDE if strictly checked before build)
+@interface LiveDetectEdgesView ()
+@end
 
 #if __has_include(<LiveDetectEdges/LiveDetectEdges-Swift.h>)
 #import <LiveDetectEdges/LiveDetectEdges-Swift.h>

@@ -35,6 +35,9 @@ import UIKit
     }
 
     private func setupScanner() {
+        // Register as active wrapper
+        LiveDetectEdgesModule.activeWrapper = self
+        
         let handler = ScannerDelegateHandler()
         self.delegateHandler = handler
         
@@ -77,22 +80,73 @@ private class ScannerDelegateHandler: NSObject, ImageScannerControllerDelegate {
     }
     
     func imageScannerController(_ scanner: ImageScannerController, didFinishScanningWithResults results: ImageScannerResults) {
-        // Handle successful scan
-        // results.originalScan and results.croppedScan are non-optional in this version of WeScan
-        let originalImage = results.originalScan.image
-        print("WeScan captured original image: \(originalImage)")
-        
-        let croppedImage = results.croppedScan.image
-        print("WeScan captured cropped image: \(croppedImage)")
-        
-        // Depending on requirements, we might want to dismiss or reset.
-        // Since this is an embedded view, 'dismiss' might not make sense if we want to keep scanning?
-        // But ImageScannerController is a flow (Scan -> Edit -> Review).
-        // If we want continuous scanning, WeScan might not be the best fit without customization or using internal components.
-        // But user asked to use WeScan, so we follow the standard flow.
+        // This delegate method is used when the full WeScan flow is used (which we might not be using fully here)
+        // Since we are using ScannerViewController directly and intercepting via onCapture, this might be redundant
+        // but kept for completeness if we ever switch modes.
     }
     
     func imageScannerControllerDidCancel(_ scanner: ImageScannerController) {
         print("WeScan cancelled")
+    }
+}
+
+extension LiveDetectEdgesScannerWrapper {
+    @objc public func captureImage(completion: @escaping ([String: Any]) -> Void) {
+        guard let scanner = self.scannerController else {
+            completion(["error": "Scanner not initialized"])
+            return
+        }
+        
+        scanner.onCapture = { [weak self] image, quad in
+            guard let self = self else { return }
+            
+            // 1. Process Image
+            let processingResult = self.processImage(image, withQuad: quad)
+            
+            // 2. Save Images
+            let originalUri = self.saveImage(image)
+            let croppedUri = self.saveImage(processingResult.croppedImage)
+            
+            // 3. Prepare Response
+            var detectedPoints: [[String: Double]] = []
+            if let quad = processingResult.quad {
+                 // Return points in original image coordinates
+                detectedPoints = [
+                    ["x": quad.topLeft.x, "y": quad.topLeft.y],
+                    ["x": quad.topRight.x, "y": quad.topRight.y],
+                    ["x": quad.bottomRight.x, "y": quad.bottomRight.y],
+                    ["x": quad.bottomLeft.x, "y": quad.bottomLeft.y]
+                ]
+            }
+            
+            let response: [String: Any] = [
+                "image": [
+                    "uri": croppedUri ?? "",
+                    "width": processingResult.croppedImage.size.width,
+                    "height": processingResult.croppedImage.size.height
+                ],
+                "originalImage": [
+                    "uri": originalUri ?? "",
+                    "width": image.size.width,
+                    "height": image.size.height
+                ],
+                "detectedPoints": detectedPoints
+            ]
+            
+            completion(response)
+            
+            // Reset handler to avoid retain cycles or unexpected behavior if reused
+            scanner.onCapture = nil
+        }
+        
+        scanner.capture()
+    }
+    
+    private func processImage(_ image: UIImage, withQuad quad: Quadrilateral?) -> (croppedImage: UIImage, quad: Quadrilateral?) {
+        return LiveDetectEdgesImageProcessor.processImage(image, withQuad: quad)
+    }
+    
+    private func saveImage(_ image: UIImage) -> String? {
+        return LiveDetectEdgesImageProcessor.saveImage(image)
     }
 }
