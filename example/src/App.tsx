@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   StyleSheet,
   View,
@@ -8,12 +8,22 @@ import {
   ActivityIndicator,
   Button,
   SafeAreaView,
+  Alert,
+  Image,
 } from 'react-native';
-import { LiveDetectEdgesView } from 'react-native-live-detect-edges';
+import {
+  LiveDetectEdgesView,
+  type LiveDetectRef,
+  type OnCaptureEventData,
+} from 'react-native-live-detect-edges';
 
 export default function App() {
   const [hasPermission, setHasPermission] = useState(false);
   const [openCamera, setOpenCamera] = useState(false);
+  const [capturedResult, setCapturedResult] =
+    useState<OnCaptureEventData | null>(null);
+  const [viewSize, setViewSize] = useState({ width: 0, height: 0 });
+  const cameraRef = useRef<LiveDetectRef>(null);
 
   useEffect(() => {
     const checkPermission = async () => {
@@ -45,6 +55,90 @@ export default function App() {
     setOpenCamera(false);
   };
 
+  const handleCapture = async () => {
+    try {
+      const result = await cameraRef.current?.takePhoto();
+      console.log('--- Captured via Promise ---');
+      if (result) {
+        console.log('Image:', result.image);
+        console.log('Original Image:', result.originalImage);
+        console.log('Detected Points:', result.detectedPoints);
+
+        setCapturedResult(result);
+      }
+    } catch (e) {
+      console.error('Capture failed', e);
+      Alert.alert('Error', 'Capture failed');
+    }
+  };
+
+  const closePreview = () => {
+    setCapturedResult(null);
+  };
+
+  const [resizeMode, setResizeMode] = useState<'contain' | 'cover'>('contain');
+
+  const toggleResizeMode = () => {
+    setResizeMode((prev) => (prev === 'contain' ? 'cover' : 'contain'));
+  };
+
+  if (capturedResult) {
+    const { originalImage, detectedPoints } = capturedResult;
+
+    // Flexible logic based on resizeMode
+    const scale =
+      resizeMode === 'contain'
+        ? Math.min(
+            viewSize.width / originalImage.width,
+            viewSize.height / originalImage.height
+          )
+        : Math.max(
+            viewSize.width / originalImage.width,
+            viewSize.height / originalImage.height
+          );
+
+    const renderWidth = originalImage.width * scale;
+    const renderHeight = originalImage.height * scale;
+
+    const offsetX = (viewSize.width - renderWidth) / 2;
+    const offsetY = (viewSize.height - renderHeight) / 2;
+
+    return (
+      <SafeAreaView style={styles.container}>
+        <View
+          style={styles.previewContainer}
+          onLayout={(e) => setViewSize(e.nativeEvent.layout)}
+        >
+          {viewSize.width > 0 && (
+            <>
+              <Image
+                source={{ uri: originalImage.uri }}
+                style={StyleSheet.absoluteFill}
+                resizeMode={resizeMode}
+              />
+              {detectedPoints.map((p: { x: number; y: number }, i: number) => (
+                <View
+                  key={i}
+                  style={[
+                    styles.point,
+                    {
+                      left: p.x * scale + offsetX - 5,
+                      top: p.y * scale + offsetY - 5,
+                    },
+                  ]}
+                />
+              ))}
+            </>
+          )}
+        </View>
+        <View style={styles.controls}>
+          <Button title={`Mode: ${resizeMode}`} onPress={toggleResizeMode} />
+          <Button title="Close" onPress={closePreview} />
+        </View>
+      </SafeAreaView>
+    );
+  }
+
   if (!hasPermission) {
     return (
       <View style={styles.container}>
@@ -56,14 +150,18 @@ export default function App() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <Button
-        title={openCamera ? 'Stop Camera' : 'Start Camera'}
-        onPress={openCamera ? handleStopCamera : handleStartCamera}
-      />
+      <View style={styles.controls}>
+        <Button
+          title={openCamera ? 'Stop Camera' : 'Start Camera'}
+          onPress={openCamera ? handleStopCamera : handleStartCamera}
+        />
+        {openCamera && <Button title="Capture" onPress={handleCapture} />}
+      </View>
 
       {openCamera && (
         <>
           <LiveDetectEdgesView
+            ref={cameraRef}
             overlayColor="red"
             overlayStrokeWidth={4}
             style={styles.scanner}
@@ -85,6 +183,10 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: 'black',
   },
+  previewContainer: {
+    flex: 1,
+    backgroundColor: '#333',
+  },
   scanner: {
     flex: 1,
   },
@@ -93,6 +195,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-around',
     padding: 10,
     backgroundColor: '#00000080',
+    zIndex: 100, // Ensure controls are above everything
   },
   button: {
     paddingHorizontal: 20,
@@ -121,6 +224,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     alignItems: 'center',
+    pointerEvents: 'none', // Allow touches to pass through
   },
   text: {
     color: 'white',
@@ -128,5 +232,14 @@ const styles = StyleSheet.create({
     backgroundColor: '#00000080',
     padding: 10,
     borderRadius: 5,
+  },
+  point: {
+    position: 'absolute',
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: 'lime',
+    borderWidth: 1,
+    borderColor: 'white',
   },
 });

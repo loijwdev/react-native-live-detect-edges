@@ -77,22 +77,115 @@ private class ScannerDelegateHandler: NSObject, ImageScannerControllerDelegate {
     }
     
     func imageScannerController(_ scanner: ImageScannerController, didFinishScanningWithResults results: ImageScannerResults) {
-        // Handle successful scan
-        // results.originalScan and results.croppedScan are non-optional in this version of WeScan
-        let originalImage = results.originalScan.image
-        print("WeScan captured original image: \(originalImage)")
-        
-        let croppedImage = results.croppedScan.image
-        print("WeScan captured cropped image: \(croppedImage)")
-        
-        // Depending on requirements, we might want to dismiss or reset.
-        // Since this is an embedded view, 'dismiss' might not make sense if we want to keep scanning?
-        // But ImageScannerController is a flow (Scan -> Edit -> Review).
-        // If we want continuous scanning, WeScan might not be the best fit without customization or using internal components.
-        // But user asked to use WeScan, so we follow the standard flow.
+        // This delegate method is used when the full WeScan flow is used (which we might not be using fully here)
+        // Since we are using ScannerViewController directly and intercepting via onCapture, this might be redundant
+        // but kept for completeness if we ever switch modes.
     }
     
     func imageScannerControllerDidCancel(_ scanner: ImageScannerController) {
         print("WeScan cancelled")
+    }
+}
+
+extension LiveDetectEdgesScannerWrapper {
+    @objc public func captureImage(completion: @escaping ([String: Any]) -> Void) {
+        guard let scanner = self.scannerController else {
+            completion(["error": "Scanner not initialized"])
+            return
+        }
+        
+        scanner.onCapture = { [weak self] image, quad in
+            guard let self = self else { return }
+            
+            // 1. Process Image
+            let processingResult = self.processImage(image, withQuad: quad)
+            
+            // 2. Save Images
+            let originalUri = self.saveImage(image)
+            let croppedUri = self.saveImage(processingResult.croppedImage)
+            
+            // 3. Prepare Response
+            var detectedPoints: [[String: Double]] = []
+            if let quad = processingResult.quad {
+                 // Return points in original image coordinates
+                detectedPoints = [
+                    ["x": quad.topLeft.x, "y": quad.topLeft.y],
+                    ["x": quad.topRight.x, "y": quad.topRight.y],
+                    ["x": quad.bottomRight.x, "y": quad.bottomRight.y],
+                    ["x": quad.bottomLeft.x, "y": quad.bottomLeft.y]
+                ]
+            }
+            
+            let response: [String: Any] = [
+                "image": [
+                    "uri": croppedUri ?? "",
+                    "width": processingResult.croppedImage.size.width,
+                    "height": processingResult.croppedImage.size.height
+                ],
+                "originalImage": [
+                    "uri": originalUri ?? "",
+                    "width": image.size.width,
+                    "height": image.size.height
+                ],
+                "detectedPoints": detectedPoints
+            ]
+            
+            completion(response)
+            
+            // Reset handler to avoid retain cycles or unexpected behavior if reused
+            scanner.onCapture = nil
+        }
+        
+        scanner.capture()
+    }
+    
+    private func processImage(_ image: UIImage, withQuad quad: Quadrilateral?) -> (croppedImage: UIImage, quad: Quadrilateral?) {
+        let quad = quad ?? self.defaultQuad(forImage: image)
+        guard let ciImage = CIImage(image: image) else {
+            return (image, nil)
+        }
+        
+        let cgOrientation = CGImagePropertyOrientation(image.imageOrientation)
+        let orientedImage = ciImage.oriented(forExifOrientation: Int32(cgOrientation.rawValue))
+        
+        // Use the quad as is (it should be in image coordinates from WeScan)
+        // Note: EditScanViewController scales quad to quadView bounds then back.
+        // WeScan's CaptureSessionManager returns quad in image coordinates (scaled if needed).
+        // Let's verify: CaptureSessionManager.swift line 340: quad = quad?.scale(displayedRectangleResult.imageSize, image.size, withRotationAngle: angle)
+        // So the quad passed here IS in image coordinates.
+        
+        var cartesianScaledQuad = quad.toCartesian(withHeight: image.size.height)
+        cartesianScaledQuad.reorganize()
+
+        let filteredImage = orientedImage.applyingFilter("CIPerspectiveCorrection", parameters: [
+            "inputTopLeft": CIVector(cgPoint: cartesianScaledQuad.bottomLeft),
+            "inputTopRight": CIVector(cgPoint: cartesianScaledQuad.bottomRight),
+            "inputBottomLeft": CIVector(cgPoint: cartesianScaledQuad.topLeft),
+            "inputBottomRight": CIVector(cgPoint: cartesianScaledQuad.topRight)
+        ])
+
+        let croppedImage = UIImage.from(ciImage: filteredImage)
+        return (croppedImage, quad)
+    }
+    
+    private func defaultQuad(forImage image: UIImage) -> Quadrilateral {
+        let topLeft = CGPoint(x: image.size.width * 0.05, y: image.size.height * 0.05)
+        let topRight = CGPoint(x: image.size.width * 0.95, y: image.size.height * 0.05)
+        let bottomRight = CGPoint(x: image.size.width * 0.95, y: image.size.height * 0.95)
+        let bottomLeft = CGPoint(x: image.size.width * 0.05, y: image.size.height * 0.95)
+        return Quadrilateral(topLeft: topLeft, topRight: topRight, bottomRight: bottomRight, bottomLeft: bottomLeft)
+    }
+    
+    private func saveImage(_ image: UIImage) -> String? {
+        guard let data = image.jpegData(compressionQuality: 0.8) else { return nil }
+        let fileName = UUID().uuidString + ".jpg"
+        let fileURL = FileManager.default.temporaryDirectory.appendingPathComponent(fileName)
+        do {
+            try data.write(to: fileURL)
+            return fileURL.absoluteString
+        } catch {
+            print("Error saving image: \(error)")
+            return nil
+        }
     }
 }
