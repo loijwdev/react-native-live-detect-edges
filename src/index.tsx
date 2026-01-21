@@ -100,3 +100,13 @@ const styles = StyleSheet.create({
 });
 
 export * from './LiveDetectEdgesViewNativeComponent';
+export { default as LiveDetectEdgesModule } from './LiveDetectEdgesModule';
+export type {
+  CropImageParams,
+  CropImageResult,
+  Quadrilateral,
+} from './LiveDetectEdgesModule';
+
+// Convenience export for cropImage function
+import LiveDetectEdgesModuleDefault from './LiveDetectEdgesModule';
+export const cropImage = LiveDetectEdgesModuleDefault.cropImage;

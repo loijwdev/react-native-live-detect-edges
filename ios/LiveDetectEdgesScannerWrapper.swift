@@ -140,52 +140,10 @@ extension LiveDetectEdgesScannerWrapper {
     }
     
     private func processImage(_ image: UIImage, withQuad quad: Quadrilateral?) -> (croppedImage: UIImage, quad: Quadrilateral?) {
-        let quad = quad ?? self.defaultQuad(forImage: image)
-        guard let ciImage = CIImage(image: image) else {
-            return (image, nil)
-        }
-        
-        let cgOrientation = CGImagePropertyOrientation(image.imageOrientation)
-        let orientedImage = ciImage.oriented(forExifOrientation: Int32(cgOrientation.rawValue))
-        
-        // Use the quad as is (it should be in image coordinates from WeScan)
-        // Note: EditScanViewController scales quad to quadView bounds then back.
-        // WeScan's CaptureSessionManager returns quad in image coordinates (scaled if needed).
-        // Let's verify: CaptureSessionManager.swift line 340: quad = quad?.scale(displayedRectangleResult.imageSize, image.size, withRotationAngle: angle)
-        // So the quad passed here IS in image coordinates.
-        
-        var cartesianScaledQuad = quad.toCartesian(withHeight: image.size.height)
-        cartesianScaledQuad.reorganize()
-
-        let filteredImage = orientedImage.applyingFilter("CIPerspectiveCorrection", parameters: [
-            "inputTopLeft": CIVector(cgPoint: cartesianScaledQuad.bottomLeft),
-            "inputTopRight": CIVector(cgPoint: cartesianScaledQuad.bottomRight),
-            "inputBottomLeft": CIVector(cgPoint: cartesianScaledQuad.topLeft),
-            "inputBottomRight": CIVector(cgPoint: cartesianScaledQuad.topRight)
-        ])
-
-        let croppedImage = UIImage.from(ciImage: filteredImage)
-        return (croppedImage, quad)
-    }
-    
-    private func defaultQuad(forImage image: UIImage) -> Quadrilateral {
-        let topLeft = CGPoint(x: image.size.width * 0.05, y: image.size.height * 0.05)
-        let topRight = CGPoint(x: image.size.width * 0.95, y: image.size.height * 0.05)
-        let bottomRight = CGPoint(x: image.size.width * 0.95, y: image.size.height * 0.95)
-        let bottomLeft = CGPoint(x: image.size.width * 0.05, y: image.size.height * 0.95)
-        return Quadrilateral(topLeft: topLeft, topRight: topRight, bottomRight: bottomRight, bottomLeft: bottomLeft)
+        return LiveDetectEdgesImageProcessor.processImage(image, withQuad: quad)
     }
     
     private func saveImage(_ image: UIImage) -> String? {
-        guard let data = image.jpegData(compressionQuality: 0.8) else { return nil }
-        let fileName = UUID().uuidString + ".jpg"
-        let fileURL = FileManager.default.temporaryDirectory.appendingPathComponent(fileName)
-        do {
-            try data.write(to: fileURL)
-            return fileURL.absoluteString
-        } catch {
-            print("Error saving image: \(error)")
-            return nil
-        }
+        return LiveDetectEdgesImageProcessor.saveImage(image)
     }
 }
