@@ -5,6 +5,11 @@ import React
 @objc(LiveDetectEdgesModule)
 class LiveDetectEdgesModule: NSObject {
     
+    // Static reference to the active scanner wrapper
+    // This allows us to call takePhoto without a view tag, assuming single active scanner instance.
+    static weak var activeWrapper: LiveDetectEdgesScannerWrapper?
+
+    
     @objc
     func cropImage(
         _ params: NSDictionary,
@@ -62,6 +67,27 @@ class LiveDetectEdgesModule: NSObject {
         ]
         
         resolve(response)
+    }
+    
+    @objc
+    func takePhoto(
+        _ resolve: @escaping RCTPromiseResolveBlock,
+        reject: @escaping RCTPromiseRejectBlock
+    ) {
+        DispatchQueue.main.async {
+            guard let wrapper = LiveDetectEdgesModule.activeWrapper else {
+                reject("NO_SCANNER", "No active scanner view found. Ensure LiveDetectEdgesView is mounted.", nil)
+                return
+            }
+            
+            wrapper.captureImage { response in
+                if let error = response["error"] as? String {
+                     reject("CAPTURE_FAILED", error, nil)
+                } else {
+                     resolve(response)
+                }
+            }
+        }
     }
     
     // Helper to parse point from dictionary

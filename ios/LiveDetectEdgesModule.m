@@ -7,4 +7,8 @@ RCT_EXTERN_METHOD(cropImage
                   : (RCTPromiseResolveBlock)resolve reject
                   : (RCTPromiseRejectBlock)reject)
 
+RCT_EXTERN_METHOD(takePhoto
+                  : (RCTPromiseResolveBlock)resolve reject
+                  : (RCTPromiseRejectBlock)reject)
+
 @end

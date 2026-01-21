@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   StyleSheet,
   View,
@@ -10,10 +10,7 @@ import {
   SafeAreaView,
   Alert,
 } from 'react-native';
-import {
-  LiveDetectEdgesView,
-  type LiveDetectRef,
-} from 'react-native-live-detect-edges';
+import { LiveDetectEdgesView, takePhoto } from 'react-native-live-detect-edges';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../navigation/types';
@@ -27,7 +24,6 @@ export default function HomeScreen() {
   const navigation = useNavigation<HomeScreenNavigationProp>();
   const [hasPermission, setHasPermission] = useState(false);
   const [openCamera, setOpenCamera] = useState(false);
-  const cameraRef = useRef<LiveDetectRef>(null);
 
   useEffect(() => {
     const checkPermission = async () => {
@@ -61,7 +57,7 @@ export default function HomeScreen() {
 
   const handleCapture = async () => {
     try {
-      const result = await cameraRef.current?.takePhoto();
+      const result = await takePhoto();
       console.log('--- Captured ---');
       if (result) {
         navigation.navigate('Crop', {
@@ -100,7 +96,6 @@ export default function HomeScreen() {
       {openCamera ? (
         <>
           <LiveDetectEdgesView
-            ref={cameraRef}
             overlayColor="red"
             overlayStrokeWidth={4}
             style={styles.scanner}

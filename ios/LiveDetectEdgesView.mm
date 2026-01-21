@@ -11,11 +11,7 @@
 
 // Protocol definition (usually in generated header, but declaring here just in
 // case helpful or to satisfy IDE if strictly checked before build)
-@protocol RCTLiveDetectEdgesViewViewProtocol <NSObject>
-- (void)capture;
-@end
-
-@interface LiveDetectEdgesView () <RCTLiveDetectEdgesViewViewProtocol>
+@interface LiveDetectEdgesView ()
 @end
 
 #if __has_include(<LiveDetectEdges/LiveDetectEdges-Swift.h>)
@@ -28,55 +24,6 @@ using namespace facebook::react;
 
 @implementation LiveDetectEdgesView {
   UIView *_view;
-}
-
-- (void)handleCommand:(const NSString *)commandName args:(const NSArray *)args {
-  RCTLiveDetectEdgesViewHandleCommand(self, commandName, args);
-}
-
-- (void)capture {
-  LiveDetectEdgesScannerWrapper *wrapper =
-      (LiveDetectEdgesScannerWrapper *)_view;
-  [wrapper captureImageWithCompletion:^(NSDictionary *response) {
-    if (!self->_eventEmitter) {
-      return;
-    }
-
-    auto eventEmitter =
-        std::static_pointer_cast<LiveDetectEdgesViewEventEmitter const>(
-            self->_eventEmitter);
-
-    NSDictionary *imageDict = response[@"image"];
-    NSDictionary *originalImageDict = response[@"originalImage"];
-    NSArray *pointsArray = response[@"detectedPoints"];
-
-    LiveDetectEdgesViewEventEmitter::OnCaptureImage image;
-    image.uri = std::string([imageDict[@"uri"] UTF8String]);
-    image.width = [imageDict[@"width"] doubleValue];
-    image.height = [imageDict[@"height"] doubleValue];
-
-    LiveDetectEdgesViewEventEmitter::OnCaptureOriginalImage originalImage;
-    originalImage.uri = std::string([originalImageDict[@"uri"] UTF8String]);
-    originalImage.width = [originalImageDict[@"width"] doubleValue];
-    originalImage.height = [originalImageDict[@"height"] doubleValue];
-
-    NSError *error;
-    NSData *jsonData = [NSJSONSerialization dataWithJSONObject:pointsArray
-                                                       options:0
-                                                         error:&error];
-    NSString *jsonString = @"[]";
-    if (jsonData && !error) {
-      jsonString = [[NSString alloc] initWithData:jsonData
-                                         encoding:NSUTF8StringEncoding];
-    }
-
-    LiveDetectEdgesViewEventEmitter::OnCapture event = {
-        .image = image,
-        .originalImage = originalImage,
-        .detectedPoints = std::string([jsonString UTF8String])};
-
-    eventEmitter->onCapture(event);
-  }];
 }
 
 + (ComponentDescriptorProvider)componentDescriptorProvider {

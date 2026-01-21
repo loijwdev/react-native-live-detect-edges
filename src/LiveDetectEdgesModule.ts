@@ -24,7 +24,22 @@ export type CropImageResult = {
   height: number;
 };
 
+export type TakePhotoResult = {
+  image: {
+    uri: string;
+    width: number;
+    height: number;
+  };
+  originalImage: {
+    uri: string;
+    width: number;
+    height: number;
+  };
+  detectedPoints: Point[];
+};
+
 export interface Spec extends TurboModule {
+  takePhoto(): Promise<TakePhotoResult>;
   cropImage(params: CropImageParams): Promise<CropImageResult>;
 }
 

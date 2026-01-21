@@ -35,6 +35,9 @@ import UIKit
     }
 
     private func setupScanner() {
+        // Register as active wrapper
+        LiveDetectEdgesModule.activeWrapper = self
+        
         let handler = ScannerDelegateHandler()
         self.delegateHandler = handler
         
