@@ -7,9 +7,15 @@ export type LiveDetectEdgesViewProps = ViewProps & {
   overlayStrokeWidth?: number;
 };
 
-export const LiveDetectEdgesView = (props: LiveDetectEdgesViewProps) => {
+export const LiveDetectEdgesView = ({
+  overlayColor = 'rgba(0, 255, 0, 0.5)',
+  overlayStrokeWidth = 4,
+  ...props
+}: LiveDetectEdgesViewProps) => {
   return (
     <LiveDetectEdgesViewNativeComponent
+      overlayColor={overlayColor}
+      overlayStrokeWidth={overlayStrokeWidth}
       {...props}
       style={[styles.defaultStyle, props.style]}
     />

@@ -99,11 +99,7 @@ export default function HomeScreen() {
 
       {openCamera ? (
         <>
-          <LiveDetectEdgesView
-            overlayColor="red"
-            overlayStrokeWidth={4}
-            style={styles.scanner}
-          />
+          <LiveDetectEdgesView style={styles.scanner} />
           {isProcessing && (
             <View style={styles.overlayIndicator}>
               <ActivityIndicator size="large" color="white" />
