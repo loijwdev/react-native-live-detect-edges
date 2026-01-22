@@ -24,6 +24,7 @@ export default function HomeScreen() {
   const navigation = useNavigation<HomeScreenNavigationProp>();
   const [hasPermission, setHasPermission] = useState(false);
   const [openCamera, setOpenCamera] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
 
   useEffect(() => {
     const checkPermission = async () => {
@@ -57,9 +58,10 @@ export default function HomeScreen() {
 
   const handleCapture = async () => {
     try {
+      setIsProcessing(true);
       const result = await takePhoto();
-      console.log('--- Captured ---');
       if (result) {
+        console.log('--- Captured --- result', result);
         navigation.navigate('Crop', {
           imageUri: result.originalImage.uri,
           imageWidth: result.originalImage.width,
@@ -71,6 +73,8 @@ export default function HomeScreen() {
     } catch (e) {
       console.error('Capture failed', e);
       Alert.alert('Error', 'Capture failed');
+    } finally {
+      setIsProcessing(false);
     }
   };
 
@@ -100,6 +104,11 @@ export default function HomeScreen() {
             overlayStrokeWidth={4}
             style={styles.scanner}
           />
+          {isProcessing && (
+            <View style={styles.overlayIndicator}>
+              <ActivityIndicator size="large" color="white" />
+            </View>
+          )}
           <View style={styles.overlay}>
             <Text style={styles.text}>Align document within frame</Text>
           </View>
@@ -130,6 +139,13 @@ const styles = StyleSheet.create({
     padding: 10,
     backgroundColor: '#00000080',
     zIndex: 100,
+  },
+  overlayIndicator: {
+    ...StyleSheet.absoluteFillObject,
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 999,
+    backgroundColor: 'rgba(0,0,0,0.5)',
   },
   overlay: {
     position: 'absolute',

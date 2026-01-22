@@ -161,7 +161,6 @@ export default function CropScreen() {
                   top: containerLayout.offsetY,
                 },
               ]}
-              resizeMode="contain" // Actually controlled by explicit dims above
             />
 
             <Svg style={StyleSheet.absoluteFill} pointerEvents="none">

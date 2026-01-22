@@ -69,80 +69,8 @@ class DocumentDetector(private val context: Context? = null) {
         }
 
         // 3. Try segmentation first if available, otherwise fall back to Canny
-        val probMask = if (segmentationDetector?.isModelLoaded() == true) {
-            // Pre-processing: improve contrast so the model is more robust to perspective and low-contrast documents.
-            // Convert grayscale to RGB for segmentation (the model expects RGB input).
-            Imgproc.cvtColor(processingMat, rgbMat, Imgproc.COLOR_GRAY2RGB)
-
-            // Increase local contrast using CLAHE (Contrast Limited Adaptive Histogram Equalization).
-            val labMat = Mat()
-            Imgproc.cvtColor(rgbMat, labMat, Imgproc.COLOR_RGB2Lab)
-            val labChannels = ArrayList<Mat>()
-            Core.split(labMat, labChannels)
-            val clahe = Imgproc.createCLAHE(2.0, Size(8.0, 8.0))
-            clahe.apply(labChannels[0], labChannels[0])
-            Core.merge(labChannels, enhancedMat)
-            Imgproc.cvtColor(enhancedMat, enhancedMat, Imgproc.COLOR_Lab2RGB)
-
-            // Cleanup temporary Mats
-            labMat.release()
-            labChannels.forEach { it.release() }
-
-            val mask = segmentationDetector?.segment(enhancedMat)
-            mask
-        } else {
-            null
-        }
-
-        // 4. If a probability mask is available, try multiple thresholds; otherwise, use Canny.
-        if (probMask != null) {
-            // Try multiple thresholds like FairScan to handle perspective cases more robustly.
-            for (threshold in SEGMENTATION_THRESHOLDS) {
-                val binaryMask = Mat()
-                Imgproc.threshold(probMask, binaryMask, threshold.toDouble(), 255.0, Imgproc.THRESH_BINARY)
-
-                // Convert to uint8
-                val uint8Mask = Mat()
-                binaryMask.convertTo(uint8Mask, CvType.CV_8UC1)
-
-                // Clean up the mask so that contours are more stable:
-                // - Close (MORPH_CLOSE) to fill small holes – larger kernel to better handle tilted shapes.
-                // - Open (MORPH_OPEN) to remove small noise blobs.
-                val cleaned = Mat()
-                val kernel = Imgproc.getStructuringElement(
-                    Imgproc.MORPH_ELLIPSE,
-                    Size(7.0, 7.0) // Larger kernel to better handle tilted angles
-                )
-                Imgproc.morphologyEx(uint8Mask, cleaned, Imgproc.MORPH_CLOSE, kernel)
-                Imgproc.morphologyEx(cleaned, cleaned, Imgproc.MORPH_OPEN, kernel)
-
-                val result = findDocumentContour(cleaned, processingMat)
-
-                // Cleanup
-                binaryMask.release()
-                uint8Mask.release()
-                cleaned.release()
-
-                if (result != null) {
-                    probMask.release()
-                    return result
-                }
-            }
-            probMask.release()
-        }
-
-        // 5. Fallback: classic OpenCV pipeline – GaussianBlur -> Otsu threshold -> Canny.
-        Imgproc.GaussianBlur(processingMat, srcBlur, Size(5.0, 5.0), 0.0)
-        Imgproc.threshold(
-            srcBlur,
-            srcBinary,
-            0.0,
-            255.0,
-            Imgproc.THRESH_BINARY or Imgproc.THRESH_OTSU
-        )
-        Imgproc.Canny(srcBinary, srcCanny, 30.0, 100.0) // Lowered thresholds for better detection
-
-        return findDocumentContour(srcCanny, processingMat)
+        // Logic refactored to detectInternal for reuse with Bitmap
+        return detectInternal(processingMat)
     }
 
     private fun findDocumentContour(contourSource: Mat, processingMat: Mat): List<PointF>? {
@@ -191,6 +119,88 @@ class DocumentDetector(private val context: Context? = null) {
 
         // No valid quad found
         return null
+    }
+
+    fun detect(bitmap: android.graphics.Bitmap): List<PointF>? {
+        if (srcGray.width() != bitmap.width || srcGray.height() != bitmap.height) {
+            srcGray.create(bitmap.height, bitmap.width, CvType.CV_8UC1)
+            rgbMat.create(bitmap.height, bitmap.width, CvType.CV_8UC3)
+            enhancedMat.create(bitmap.height, bitmap.width, CvType.CV_8UC3)
+        }
+        
+        org.opencv.android.Utils.bitmapToMat(bitmap, rgbMat)
+        Imgproc.cvtColor(rgbMat, srcGray, Imgproc.COLOR_RGB2GRAY)
+        
+        // No rotation needed for bitmap as we assume it's already oriented correctly or we handle it before passing here
+        val processingMat = srcGray
+        
+        // Reuse the logic from the other detect method, but extracted to common helper if possible.
+        // For now, duplicating the logic flow or we can refactor. 
+        // Let's refactor the core logic into `detectInternal`.
+        
+        return detectInternal(processingMat)
+    }
+
+    private fun detectInternal(processingMat: Mat): List<PointF>? {
+         // 3. Try segmentation first if available, otherwise fall back to Canny
+        val probMask = if (segmentationDetector?.isModelLoaded() == true) {
+            // Pre-processing
+            Imgproc.cvtColor(processingMat, rgbMat, Imgproc.COLOR_GRAY2RGB)
+
+            // Increase local contrast
+            val labMat = Mat()
+            Imgproc.cvtColor(rgbMat, labMat, Imgproc.COLOR_RGB2Lab)
+            val labChannels = ArrayList<Mat>()
+            Core.split(labMat, labChannels)
+            val clahe = Imgproc.createCLAHE(2.0, Size(8.0, 8.0))
+            clahe.apply(labChannels[0], labChannels[0])
+            Core.merge(labChannels, enhancedMat)
+            Imgproc.cvtColor(enhancedMat, enhancedMat, Imgproc.COLOR_Lab2RGB)
+
+            // Cleanup temporary Mats
+            labMat.release()
+            labChannels.forEach { it.release() }
+
+            val mask = segmentationDetector?.segment(enhancedMat)
+            mask
+        } else {
+            null
+        }
+
+        // 4. If a probability mask is available...
+        if (probMask != null) {
+            for (threshold in SEGMENTATION_THRESHOLDS) {
+                val binaryMask = Mat()
+                Imgproc.threshold(probMask, binaryMask, threshold.toDouble(), 255.0, Imgproc.THRESH_BINARY)
+                val uint8Mask = Mat()
+                binaryMask.convertTo(uint8Mask, CvType.CV_8UC1)
+                
+                val cleaned = Mat()
+                val kernel = Imgproc.getStructuringElement(Imgproc.MORPH_ELLIPSE, Size(3.0, 3.0))
+                Imgproc.morphologyEx(uint8Mask, cleaned, Imgproc.MORPH_CLOSE, kernel)
+                Imgproc.morphologyEx(cleaned, cleaned, Imgproc.MORPH_OPEN, kernel)
+
+                val result = findDocumentContour(cleaned, processingMat)
+
+                binaryMask.release()
+                uint8Mask.release()
+                cleaned.release()
+
+                if (result != null) {
+                    probMask.release()
+                    return result
+                }
+            }
+            probMask.release()
+        }
+
+        // 5. Fallback: classic OpenCV pipeline
+        // Use Canny directly on blurred grayscale image for better edge preservation
+        Imgproc.GaussianBlur(processingMat, srcBlur, Size(5.0, 5.0), 0.0)
+        // Imgproc.threshold(srcBlur, srcBinary, 0.0, 255.0, Imgproc.THRESH_BINARY or Imgproc.THRESH_OTSU)
+        Imgproc.Canny(srcBlur, srcCanny, 75.0, 200.0)
+
+        return findDocumentContour(srcCanny, processingMat)
     }
 
     private fun rotateMat(src: Mat, rotationDegrees: Int): Mat {

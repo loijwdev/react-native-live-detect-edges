@@ -1,5 +1,4 @@
-import type { TurboModule } from 'react-native';
-import { TurboModuleRegistry } from 'react-native';
+import { type TurboModule, TurboModuleRegistry } from 'react-native';
 
 export type Point = {
   x: number;
@@ -43,4 +42,8 @@ export interface Spec extends TurboModule {
   cropImage(params: CropImageParams): Promise<CropImageResult>;
 }
 
-export default TurboModuleRegistry.getEnforcing<Spec>('LiveDetectEdgesModule');
+const LiveDetectEdgesModule = TurboModuleRegistry.getEnforcing<Spec>(
+  'LiveDetectEdgesModule'
+);
+
+export default LiveDetectEdgesModule;

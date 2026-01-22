@@ -98,6 +98,4 @@ dependencies {
   // LiteRT for segmentation model (replaces TensorFlow Lite, supports 16 KB page size)
   implementation 'com.google.ai.edge.litert:litert:1.4.0'
   implementation 'com.google.ai.edge.litert:litert-api:1.4.0'
-  implementation 'com.google.ai.edge.litert:litert-support:1.4.0'
-  implementation 'com.google.ai.edge.litert:litert-metadata:1.4.0'
 }
