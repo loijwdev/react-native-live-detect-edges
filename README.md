@@ -163,7 +163,7 @@ Special thanks to the authors of these amazing libraries:
 - **Android**: Big thanks to [pynicolas](https://github.com/pynicolas) for [FairScan](https://github.com/pynicolas/FairScan). This library provided the core inspiration and logic for the Android implementation.
 - **iOS**: Huge shoutout to the team at [WeTransfer](https://github.com/WeTransfer) and all contributors of [WeScan](https://github.com/WeTransferArchive/WeScan) for building such a robust foundation.
 
-## �📄 License
+## 📄 License
 
 MIT
 
