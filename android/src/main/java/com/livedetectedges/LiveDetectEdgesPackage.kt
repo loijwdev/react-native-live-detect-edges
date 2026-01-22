@@ -14,6 +14,8 @@ class LiveDetectEdgesViewPackage : ReactPackage {
   }
 
   override fun createNativeModules(reactContext: ReactApplicationContext): List<NativeModule> {
-    return emptyList()
+    val modules = ArrayList<NativeModule>()
+    modules.add(LiveDetectEdgesModule(reactContext))
+    return modules
   }
 }
