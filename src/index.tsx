@@ -1,4 +1,4 @@
-import { type ViewProps, StyleSheet } from 'react-native';
+import { type ViewProps, StyleSheet, processColor } from 'react-native';
 import LiveDetectEdgesViewNativeComponent from './LiveDetectEdgesViewNativeComponent';
 
 export type LiveDetectEdgesViewProps = ViewProps & {
@@ -9,12 +9,14 @@ export type LiveDetectEdgesViewProps = ViewProps & {
 
 export const LiveDetectEdgesView = ({
   overlayColor = 'rgba(0, 255, 0, 0.5)',
+  overlayFillColor,
   overlayStrokeWidth = 4,
   ...props
 }: LiveDetectEdgesViewProps) => {
   return (
     <LiveDetectEdgesViewNativeComponent
-      overlayColor={overlayColor}
+      overlayColor={processColor(overlayColor)}
+      overlayFillColor={processColor(overlayFillColor)}
       overlayStrokeWidth={overlayStrokeWidth}
       {...props}
       style={[styles.defaultStyle, props.style]}
