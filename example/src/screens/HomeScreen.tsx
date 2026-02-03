@@ -7,11 +7,11 @@ import {
   Platform,
   ActivityIndicator,
   Button,
-  SafeAreaView,
   Alert,
 } from 'react-native';
 import { LiveDetectEdgesView, takePhoto } from 'react-native-live-detect-edges';
 import { useNavigation } from '@react-navigation/native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../navigation/types';
 
