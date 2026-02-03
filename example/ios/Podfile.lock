@@ -8,7 +8,7 @@ PODS:
   - hermes-engine (0.14.0):
     - hermes-engine/Pre-built (= 0.14.0)
   - hermes-engine/Pre-built (0.14.0)
-  - LiveDetectEdges (0.1.0):
+  - LiveDetectEdges (0.2.0):
     - boost
     - DoubleConversion
     - fast_float
@@ -3163,7 +3163,7 @@ SPEC CHECKSUMS:
   fmt: a40bb5bd0294ea969aaaba240a927bd33d878cdd
   glog: 5683914934d5b6e4240e497e0f4a3b42d1854183
   hermes-engine: aac92a2a793919da02683c1c2b6d9eabf622619c
-  LiveDetectEdges: c6114eee4705426f76a642f73e7aa7b2fa5971e2
+  LiveDetectEdges: 836a297097894fb04fd9353defa0e1c6d0d9c6fa
   RCT-Folly: 59ec0ac1f2f39672a0c6e6cecdd39383b764646f
   RCTDeprecation: 2b70c6e3abe00396cefd8913efbf6a2db01a2b36
   RCTRequired: f3540eee8094231581d40c5c6d41b0f170237a81
