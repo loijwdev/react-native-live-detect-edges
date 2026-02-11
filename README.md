@@ -1,8 +1,14 @@
-# react-native-live-detect-edges
+<div align="center">
+  <img src="screenshots/logo.png" width="150" />
+  <h1>React Native Live Document Edge Detection</h1>
+  <p>A high-performance, real-time document edge detection and crop library for React Native (iOS & Android).</p>
 
-📸 **React Native Live Document Edge Detection**
+[![npm version](https://img.shields.io/npm/v/react-native-live-detect-edges.svg)](https://www.npmjs.com/package/react-native-live-detect-edges)
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/loijwdev/react-native-live-detect-edges/blob/main/LICENSE)
+[![Platform - Android](https://img.shields.io/badge/platform-Android-3ddc84.svg?logo=android&logoColor=white)](https://www.android.com)
+[![Platform - iOS](https://img.shields.io/badge/platform-iOS-000.svg?logo=apple&logoColor=white)](https://developer.apple.com/ios)
 
-A high-performance, real-time document edge detection and crop library for React Native (iOS & Android).
+</div>
 
 ---
 
